@@ -20,7 +20,6 @@ import io.github.p1neapplexpress.openflux.service.SocksVpnService
 import io.github.p1neapplexpress.openflux.util.Logx
 import io.github.p1neapplexpress.openflux.vpn.VPNConfig
 import io.github.p1neapplexpress.openflux.vpn.VpnIntentFactory
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -119,7 +118,7 @@ class TunnelsViewModel(app: Application) : AndroidViewModel(app) {
         _selected.value = tunnel
         _active.value = TunnelState.Connecting(tunnel)
 
-        startJob = CoroutineScope(Dispatchers.IO).launch {
+        startJob = viewModelScope.launch(Dispatchers.IO) {
             pendingTeardown?.join()
             _active.value = TunnelState.Connecting(tunnel)
 
@@ -213,7 +212,7 @@ class TunnelsViewModel(app: Application) : AndroidViewModel(app) {
         startJob?.cancel()
         startJob = null
         val previous = teardownJob
-        teardownJob = CoroutineScope(Dispatchers.IO).launch {
+        teardownJob = viewModelScope.launch(Dispatchers.IO) {
             previous?.join()
             if (bindRequested) {
                 // A cancelled start may still be binding; the service must be stopped anyway.

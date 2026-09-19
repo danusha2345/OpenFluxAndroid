@@ -101,6 +101,7 @@ class SocksVpnService : android.net.VpnService() {
         val cm = getSystemService(ConnectivityManager::class.java) ?: return
         val req = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
             .build()
         val cb = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {

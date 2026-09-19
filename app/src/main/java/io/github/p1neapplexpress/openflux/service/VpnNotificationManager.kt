@@ -17,7 +17,6 @@ import io.github.p1neapplexpress.openflux.R
 import io.github.p1neapplexpress.openflux.event.AppEvent
 import io.github.p1neapplexpress.openflux.event.EventBus
 import io.github.p1neapplexpress.openflux.ui.MainActivity
-import java.util.Locale
 
 class VpnNotificationManager(private val service: Service) {
 
@@ -35,8 +34,10 @@ class VpnNotificationManager(private val service: Service) {
     private var sessionRxStart = 0L
     private var sessionTxStart = 0L
 
-    // speedUpdater refreshes the pinned notification with the current
-    // upload/download speed once a second while the tunnel is running.
+    // speedUpdater publishes session traffic to the app once a second.
+    // The foreground notification itself remains static: repeatedly calling
+    // notify() makes some Android/OEM status bars reorder this icon against
+    // neighbouring notification icons every second.
     // TrafficStats is used instead of tapping the packet path directly:
     // the data plane here is a native tun2socks process, opaque to this
     // Kotlin code, but per-UID counters keep working regardless of which
@@ -60,7 +61,6 @@ class VpnNotificationManager(private val service: Service) {
                     rxBytesPerSecond = rxPerSec.coerceAtLeast(0),
                 )
             )
-            updateContent("↑ ${formatSpeed(txPerSec)}   ↓ ${formatSpeed(rxPerSec)}")
             handler.postDelayed(this, UPDATE_INTERVAL_MS)
         }
     }
@@ -89,11 +89,6 @@ class VpnNotificationManager(private val service: Service) {
         EventBus.dispatch(AppEvent.TrafficSnapshot(0, 0, 0, 0))
     }
 
-    private fun updateContent(text: String) {
-        val mgr = service.getSystemService(NotificationManager::class.java) ?: return
-        mgr.notify(NOTIFICATION_ID, buildNotification(text))
-    }
-
     private fun buildNotification(text: String): Notification {
         val contentIntent = PendingIntent.getActivity(
             service,
@@ -111,7 +106,7 @@ class VpnNotificationManager(private val service: Service) {
         return NotificationCompat.Builder(service, CHANNEL_ID)
             .setContentTitle(service.getString(R.string.notify_title))
             .setContentText(text)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_notification)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -120,12 +115,6 @@ class VpnNotificationManager(private val service: Service) {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
-    }
-
-    private fun formatSpeed(bytesPerSecond: Long): String = when {
-        bytesPerSecond < 1024 -> "$bytesPerSecond B/s"
-        bytesPerSecond < 1024 * 1024 -> String.format(Locale.US, "%.0f KB/s", bytesPerSecond / 1024.0)
-        else -> String.format(Locale.US, "%.1f MB/s", bytesPerSecond / (1024.0 * 1024.0))
     }
 
     private fun createChannel() {
