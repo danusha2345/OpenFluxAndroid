@@ -22,6 +22,8 @@
     <string name="encryption_key">Публичный ключ exit-ноды (Noise)</string>
     <string name="encryption_key_helper">Обязательно. Вставьте base64-ключ, который печатает exit-нода</string>
     <string name="encryption_key_too_short">Нужен base64-публичный ключ длиной 32 байта</string>
+    <string name="show_encryption_key">Показать публичный ключ</string>
+    <string name="hide_encryption_key">Скрыть публичный ключ</string>
     <string name="cupsonline_encryption_warning">Используйте один публичный ключ exit-ноды для всех транспортов.</string>
     <string name="legacy_codec">Старый кодек (LZ4)</string>
     <string name="legacy_codec_off">Выкл: batched + zstd, как в OpenFlux по умолчанию</string>

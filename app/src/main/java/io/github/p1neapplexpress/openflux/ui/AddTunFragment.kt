@@ -1,10 +1,12 @@
 package io.github.p1neapplexpress.openflux.ui
 
 import android.os.Bundle
+import android.text.method.PasswordTransformationMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
@@ -70,7 +72,7 @@ class AddTunFragment : BaseFragment() {
         val maxToken = view.findViewById<TextView>(R.id.maxToken)
         val maxUid = view.findViewById<TextView>(R.id.maxUserId)
         val keyContainer = view.findViewById<TextInputLayout>(R.id.encryptionKeyContainer)
-        val key = view.findViewById<TextView>(R.id.encryptionKey)
+        val key = view.findViewById<EditText>(R.id.encryptionKey)
         val codecSwitch = view.findViewById<SwitchMaterial>(R.id.codecSwitch)
         val codecLabel = view.findViewById<TextView>(R.id.selectedCodec)
         val debugSwitch = view.findViewById<SwitchMaterial>(R.id.debugSwitch)
@@ -85,7 +87,7 @@ class AddTunFragment : BaseFragment() {
             docUrl.text = form.url
             maxToken.text = form.maxToken
             maxUid.text = form.maxUid
-            key.text = initial.encryptionKey.orEmpty()
+            key.setText(initial.encryptionKey.orEmpty())
             codecSwitch.isChecked = form.legacyCodec
             debugSwitch.isChecked = form.debug
             save.text = getString(R.string.action_edit)
@@ -108,6 +110,23 @@ class AddTunFragment : BaseFragment() {
         view.findViewById<View>(R.id.debugSelector).setOnClickListener { debugSwitch.toggle() }
 
         key.doAfterTextChanged { keyContainer.error = null }
+
+        var keyVisible = false
+        fun updateKeyVisibility() {
+            key.transformationMethod = if (keyVisible) null else PasswordTransformationMethod.getInstance()
+            keyContainer.setEndIconDrawable(
+                if (keyVisible) R.drawable.ic_visibility else R.drawable.ic_visibility_off
+            )
+            keyContainer.endIconContentDescription = getString(
+                if (keyVisible) R.string.hide_encryption_key else R.string.show_encryption_key
+            )
+            key.setSelection(key.text.length)
+        }
+        keyContainer.setEndIconOnClickListener {
+            keyVisible = !keyVisible
+            updateKeyVisibility()
+        }
+        updateKeyVisibility()
 
         save.setOnClickListener {
             val tunnelName = name.text.trim().toString()
