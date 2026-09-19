@@ -55,6 +55,7 @@ class TunnelsFragment : BaseFragment() {
     private lateinit var tunnelName: TextView
     private lateinit var chevron: ImageView
     private lateinit var statusText: TextView
+    private lateinit var uptimeLabel: TextView
     private lateinit var uptimeText: TextView
     private lateinit var trafficText: TextView
 
@@ -110,6 +111,7 @@ class TunnelsFragment : BaseFragment() {
         tunnelName = view.findViewById(R.id.tunnelName)
         chevron = view.findViewById(R.id.chevron)
         statusText = view.findViewById(R.id.statusText)
+        uptimeLabel = view.findViewById(R.id.uptimeLabel)
         uptimeText = view.findViewById(R.id.uptimeText)
         trafficText = view.findViewById(R.id.trafficText)
 
@@ -495,6 +497,8 @@ class TunnelsFragment : BaseFragment() {
 
     private fun showUptime() {
         if (uptimeText.alpha > 0.05f) return
+        uptimeLabel.animate().cancel()
+        uptimeLabel.animate().alpha(1f).setDuration(300L).start()
         uptimeText.translationY = 16f
         uptimeText.animate().alpha(1f).translationY(0f)
             .setDuration(500L).setInterpolator(OvershootInterpolator(1.2f)).start()
@@ -502,6 +506,8 @@ class TunnelsFragment : BaseFragment() {
 
     private fun hideUptime() {
         if (uptimeText.alpha < 0.05f) return
+        uptimeLabel.animate().cancel()
+        uptimeLabel.animate().alpha(0f).setDuration(150L).start()
         uptimeText.animate().alpha(0f).setDuration(200L).start()
     }
 

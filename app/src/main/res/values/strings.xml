@@ -25,6 +25,7 @@
     <string name="show_encryption_key">Show public key</string>
     <string name="hide_encryption_key">Hide public key</string>
     <string name="notification_stop">Turn off</string>
+    <string name="notify_connecting">Connecting transport…</string>
     <string name="traffic_counter">↑ %1$s (%2$s)   ↓ %3$s (%4$s)</string>
     <string name="cupsonline_encryption_warning">Use the same exit public key for every transport.</string>
     <string name="legacy_codec">Legacy codec (LZ4)</string>

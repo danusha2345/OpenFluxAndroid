@@ -13,6 +13,7 @@ class NativeArgsTest {
         assertEquals(
             listOf(
                 "--role", "client", "--inbound", "socks5", "--socks5", socks,
+                "--traffic-stats", "1s",
                 "--transport", "yandex", "--url", "https://d", "--debug",
             ),
             NativeArgs.build(payload, socks, peerKey = null),
@@ -28,6 +29,7 @@ class NativeArgsTest {
         assertEquals(
             listOf(
                 "--role", "client", "--inbound", "socks5", "--socks5", socks,
+                "--traffic-stats", "1s",
                 "--peer-key", "server-public-key", "--transport", "mailru", "--url", "a/b",
             ),
             NativeArgs.build(payload, socks, peerKey = "server-public-key"),
@@ -40,6 +42,7 @@ class NativeArgsTest {
         assertEquals(
             listOf(
                 "--role", "client", "--inbound", "socks5", "--socks5", socks,
+                "--traffic-stats", "1s",
                 "--transport", "cupsonline", "--url=https://x/?rooms=abc==",
             ),
             NativeArgs.build(payload, socks, peerKey = null),

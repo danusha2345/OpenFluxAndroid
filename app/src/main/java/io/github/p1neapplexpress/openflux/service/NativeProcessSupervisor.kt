@@ -39,6 +39,7 @@ class NativeProcessSupervisor(
     private val handler = Handler(Looper.getMainLooper())
     private val running = AtomicBoolean(false)
     private val ready = AtomicBoolean(false)
+    private val transportReady = AtomicBoolean(false)
     private val shuttingDown = AtomicBoolean(false)
 
     @Volatile
@@ -53,6 +54,9 @@ class NativeProcessSupervisor(
     @Volatile
     private var lastEncryptionKey: String? = null
 
+    private var lastTrafficTotals: NativeTrafficTotals? = null
+    private var lastTrafficAt = 0L
+
     /** SOCKS5 port of the current run on 127.0.0.1. */
     @Volatile
     var socksPort: Int = 0
@@ -63,7 +67,7 @@ class NativeProcessSupervisor(
     var error: String? = null
         private set
 
-    val isReady: Boolean get() = ready.get()
+    val isReady: Boolean get() = ready.get() && transportReady.get()
     val isRunning: Boolean get() = running.get()
 
     fun start(payload: List<String>, encryptionKey: String?) {
@@ -73,10 +77,13 @@ class NativeProcessSupervisor(
         }
         shuttingDown.set(false)
         ready.set(false)
+        transportReady.set(false)
         error = null
         lastOutput = null
         lastPayload = payload.toList()
         lastEncryptionKey = encryptionKey
+        lastTrafficTotals = null
+        lastTrafficAt = 0L
 
         try {
             val nativeDir = context.applicationInfo.nativeLibraryDir
@@ -104,8 +111,10 @@ class NativeProcessSupervisor(
         shuttingDown.set(true)
         ready.set(false)
         running.set(false)
+        transportReady.set(false)
         process?.let(::destroy)
         process = null
+        EventBus.dispatch(AppEvent.TrafficSnapshot(0, 0, 0, 0))
     }
 
     /** Restart the native client after the Android default network changes. */
@@ -123,7 +132,6 @@ class NativeProcessSupervisor(
             if (Loopback.canConnect(socksPort, CONNECT_PROBE_MS)) {
                 ready.set(true)
                 Logx.i(TAG, "OpenFlux is up, SOCKS5 on 127.0.0.1:$socksPort")
-                EventBus.dispatch(AppEvent.TransportConnected)
                 break
             }
             if (SystemClock.elapsedRealtime() > deadline) {
@@ -146,6 +154,10 @@ class NativeProcessSupervisor(
             p.inputStream.bufferedReader().useLines { lines ->
                 for (line in lines) {
                     if (line.isBlank()) continue
+                    NativeTrafficLine.parse(line)?.let { totals ->
+                        publishTraffic(totals)
+                        continue
+                    }
                     lastOutput = line
                     android.util.Log.d("NativeStdout", line)
                     EventBus.dispatch(AppEvent.LogMessage(line))
@@ -155,11 +167,36 @@ class NativeProcessSupervisor(
         }
     }
 
+    private fun publishTraffic(totals: NativeTrafficTotals) {
+        val now = SystemClock.elapsedRealtime()
+        val previous = lastTrafficTotals
+        val elapsedMs = (now - lastTrafficAt).coerceAtLeast(1L)
+        val txRate = if (previous == null) 0 else
+            (totals.txBytes - previous.txBytes).coerceAtLeast(0) * 1000 / elapsedMs
+        val rxRate = if (previous == null) 0 else
+            (totals.rxBytes - previous.rxBytes).coerceAtLeast(0) * 1000 / elapsedMs
+        lastTrafficTotals = totals
+        lastTrafficAt = now
+        val wasConnected = transportReady.getAndSet(totals.connected)
+        if (totals.connected && !wasConnected) {
+            Logx.i(TAG, "OpenFlux transport connected")
+            EventBus.dispatch(AppEvent.TransportConnected)
+        } else if (!totals.connected && wasConnected) {
+            Logx.w(TAG, "OpenFlux transport disconnected; waiting for reconnect")
+            EventBus.dispatch(AppEvent.TransportDisconnected)
+        }
+        EventBus.dispatch(
+            AppEvent.TrafficSnapshot(totals.txBytes, totals.rxBytes, txRate, rxRate)
+        )
+    }
+
     private fun fail(message: String) {
         Logx.e(TAG, message)
         error = message
         ready.set(false)
+        transportReady.set(false)
         running.set(false)
+        EventBus.dispatch(AppEvent.TrafficSnapshot(0, 0, 0, 0))
         if (!shuttingDown.get()) handler.post { onUnexpectedExit(message) }
     }
 

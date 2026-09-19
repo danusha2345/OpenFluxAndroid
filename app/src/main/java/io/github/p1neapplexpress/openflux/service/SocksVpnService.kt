@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import android.os.IBinder
 import io.github.p1neapplexpress.openflux.IUnifiedService
 import io.github.p1neapplexpress.openflux.event.AppEvent
@@ -99,10 +97,6 @@ class SocksVpnService : android.net.VpnService() {
     // транспорта, чтобы не ждать 15+ секунд backoff'а внутри Go-ядра.
     private fun registerNetworkCallback() {
         val cm = getSystemService(ConnectivityManager::class.java) ?: return
-        val req = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
-            .build()
         val cb = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 val id = network.toString()
@@ -114,7 +108,11 @@ class SocksVpnService : android.net.VpnService() {
                 if (id != lastNetworkId) {
                     Logx.i(TAG, "network changed: $lastNetworkId -> $id")
                     lastNetworkId = id
-                    if (supervisor.isRunning) supervisor.forceRestart()
+                    // onAvailable may fire for Wi-Fi and cellular while the
+                    // first connection is still starting. Restart only a
+                    // fully established transport; otherwise the callback
+                    // repeatedly kills the process before its Noise handshake.
+                    if (supervisor.isReady) supervisor.forceRestart()
                 }
             }
 
@@ -122,7 +120,10 @@ class SocksVpnService : android.net.VpnService() {
                 Logx.w(TAG, "network lost: $network")
             }
         }
-        runCatching { cm.registerNetworkCallback(req, cb) }
+        // Follow this app's actual default network. Because the VPN excludes
+        // its own package, this remains Wi-Fi/cellular and does not fire again
+        // merely because the OpenFlux VPN network was established.
+        runCatching { cm.registerDefaultNetworkCallback(cb) }
             .onFailure { Logx.w(TAG, "registerNetworkCallback failed: ${it.message}") }
         networkCallback = cb
     }

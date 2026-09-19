@@ -6,7 +6,7 @@ object NativeArgs {
     // Flags the app always sets itself; copies inside a stored payload are dropped.
     private val OWNED_WITH_VALUE = setOf(
         "role", "r", "inbound", "i", "socks5", "s",
-        "encryption-key-file", "peer-key",
+        "encryption-key-file", "peer-key", "traffic-stats",
     )
     private val OWNED_BOOLEAN = setOf("client", "exit-node", "tun", "socks5-mode")
 
@@ -16,6 +16,7 @@ object NativeArgs {
         add("--role"); add("client")
         add("--inbound"); add("socks5")
         add("--socks5"); add(socksAddress)
+        add("--traffic-stats"); add("1s")
         if (peerKey != null) {
             add("--peer-key"); add(peerKey)
         }

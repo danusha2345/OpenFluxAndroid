@@ -1,2 +1,2 @@
-OpenFlux d58d1896e4a11b0d8d7008eb23c04a2c8757c5a8
+OpenFlux 6e06c9f53ee2fe337de33cdfc7e33ecad153b1a1
 go version go1.27.1 linux/amd64

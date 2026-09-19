@@ -25,6 +25,7 @@
     <string name="show_encryption_key">Показать публичный ключ</string>
     <string name="hide_encryption_key">Скрыть публичный ключ</string>
     <string name="notification_stop">Выключить</string>
+    <string name="notify_connecting">Подключение транспорта…</string>
     <string name="traffic_counter">↑ %1$s (%2$s)   ↓ %3$s (%4$s)</string>
     <string name="cupsonline_encryption_warning">Используйте один публичный ключ exit-ноды для всех транспортов.</string>
     <string name="legacy_codec">Старый кодек (LZ4)</string>
