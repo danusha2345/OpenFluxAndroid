@@ -32,11 +32,13 @@ import io.github.p1neapplexpress.openflux.R
 import io.github.p1neapplexpress.openflux.data.Tunnel
 import io.github.p1neapplexpress.openflux.data.TunnelState
 import io.github.p1neapplexpress.openflux.event.AppEvent
+import io.github.p1neapplexpress.openflux.event.EventBus
 import io.github.p1neapplexpress.openflux.ui.widget.AuroraView
 import io.github.p1neapplexpress.openflux.ui.widget.PulseRingsView
 import io.github.p1neapplexpress.openflux.util.toUptimeHms
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import java.util.Locale
 
 class TunnelsFragment : BaseFragment() {
 
@@ -54,6 +56,7 @@ class TunnelsFragment : BaseFragment() {
     private lateinit var chevron: ImageView
     private lateinit var statusText: TextView
     private lateinit var uptimeText: TextView
+    private lateinit var trafficText: TextView
 
     private var rotationAnim: ObjectAnimator? = null
     private var breathAnim: ObjectAnimator? = null
@@ -108,6 +111,7 @@ class TunnelsFragment : BaseFragment() {
         chevron = view.findViewById(R.id.chevron)
         statusText = view.findViewById(R.id.statusText)
         uptimeText = view.findViewById(R.id.uptimeText)
+        trafficText = view.findViewById(R.id.trafficText)
 
         connectButton.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -151,6 +155,11 @@ class TunnelsFragment : BaseFragment() {
                 launch { vm.active.collect { applyState(it) } }
                 launch { vm.uptimeSeconds.collect { renderUptime(it) } }
                 launch { vm.selected.collect { renderSelected(it) } }
+                launch {
+                    EventBus.events.collect { event ->
+                        if (event is AppEvent.TrafficSnapshot) renderTraffic(event)
+                    }
+                }
             }
         }
     }
@@ -324,6 +333,7 @@ class TunnelsFragment : BaseFragment() {
                 startBreath()
                 animateIcon(scale = 1f, alpha = 0.92f)
                 hideUptime()
+                hideTraffic()
             }
 
             is TunnelState.Connecting,
@@ -345,6 +355,7 @@ class TunnelsFragment : BaseFragment() {
                 stopBreath()
                 animateIcon(scale = 0.94f, alpha = 0.7f)
                 hideUptime()
+                hideTraffic()
             }
 
             is TunnelState.Running -> {
@@ -359,6 +370,7 @@ class TunnelsFragment : BaseFragment() {
                 animateIcon(scale = 1.08f, alpha = 1f)
                 popButton()
                 showUptime()
+                showTraffic()
             }
 
             is TunnelState.Error -> {
@@ -372,6 +384,7 @@ class TunnelsFragment : BaseFragment() {
                 animateIcon(scale = 1f, alpha = 1f)
                 shake()
                 hideUptime()
+                hideTraffic()
             }
         }
     }
@@ -388,6 +401,29 @@ class TunnelsFragment : BaseFragment() {
             uptimeText.animate().scaleX(1f).scaleY(1f).setDuration(180L)
                 .setInterpolator(OvershootInterpolator(1.4f)).start()
         }
+    }
+
+    private fun renderTraffic(snapshot: AppEvent.TrafficSnapshot) {
+        trafficText.text = getString(
+            R.string.traffic_counter,
+            formatBytes(snapshot.txBytes),
+            formatRate(snapshot.txBytesPerSecond),
+            formatBytes(snapshot.rxBytes),
+            formatRate(snapshot.rxBytesPerSecond),
+        )
+    }
+
+    private fun formatBytes(bytes: Long): String = when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> String.format(Locale.US, "%.1f KB", bytes / 1024.0)
+        bytes < 1024L * 1024 * 1024 -> String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024))
+        else -> String.format(Locale.US, "%.2f GB", bytes / (1024.0 * 1024 * 1024))
+    }
+
+    private fun formatRate(bytesPerSecond: Long): String = when {
+        bytesPerSecond < 1024 -> "$bytesPerSecond B/s"
+        bytesPerSecond < 1024 * 1024 -> String.format(Locale.US, "%.0f KB/s", bytesPerSecond / 1024.0)
+        else -> String.format(Locale.US, "%.1f MB/s", bytesPerSecond / (1024.0 * 1024))
     }
 
     private fun crossFadeStatus() {
@@ -467,6 +503,16 @@ class TunnelsFragment : BaseFragment() {
     private fun hideUptime() {
         if (uptimeText.alpha < 0.05f) return
         uptimeText.animate().alpha(0f).setDuration(200L).start()
+    }
+
+    private fun showTraffic() {
+        trafficText.animate().cancel()
+        trafficText.animate().alpha(1f).setDuration(250L).start()
+    }
+
+    private fun hideTraffic() {
+        trafficText.animate().cancel()
+        trafficText.animate().alpha(0f).setDuration(150L).start()
     }
 
     override fun onDestroyView() {

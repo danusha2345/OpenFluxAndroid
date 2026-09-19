@@ -6,6 +6,13 @@ sealed interface AppEvent {
     data object TransportConnected : AppEvent
     data object TransportDisconnected : AppEvent
 
+    data class TrafficSnapshot(
+        val txBytes: Long,
+        val rxBytes: Long,
+        val txBytesPerSecond: Long,
+        val rxBytesPerSecond: Long,
+    ) : AppEvent
+
     /** The OpenFlux process died or never came up; the VPN has been stopped. */
     data class NativeProcessExited(val message: String) : AppEvent
 }

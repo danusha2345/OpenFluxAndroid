@@ -14,6 +14,8 @@ import android.os.Process
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import io.github.p1neapplexpress.openflux.R
+import io.github.p1neapplexpress.openflux.event.AppEvent
+import io.github.p1neapplexpress.openflux.event.EventBus
 import io.github.p1neapplexpress.openflux.ui.MainActivity
 import java.util.Locale
 
@@ -30,6 +32,8 @@ class VpnNotificationManager(private val service: Service) {
     private var lastRxBytes = 0L
     private var lastTxBytes = 0L
     private var lastSampleAt = 0L
+    private var sessionRxStart = 0L
+    private var sessionTxStart = 0L
 
     // speedUpdater refreshes the pinned notification with the current
     // upload/download speed once a second while the tunnel is running.
@@ -48,6 +52,14 @@ class VpnNotificationManager(private val service: Service) {
             lastRxBytes = rxBytes
             lastTxBytes = txBytes
             lastSampleAt = now
+            EventBus.dispatch(
+                AppEvent.TrafficSnapshot(
+                    txBytes = (txBytes - sessionTxStart).coerceAtLeast(0),
+                    rxBytes = (rxBytes - sessionRxStart).coerceAtLeast(0),
+                    txBytesPerSecond = txPerSec.coerceAtLeast(0),
+                    rxBytesPerSecond = rxPerSec.coerceAtLeast(0),
+                )
+            )
             updateContent("↑ ${formatSpeed(txPerSec)}   ↓ ${formatSpeed(rxPerSec)}")
             handler.postDelayed(this, UPDATE_INTERVAL_MS)
         }
@@ -63,6 +75,8 @@ class VpnNotificationManager(private val service: Service) {
     fun startSpeedUpdates() {
         lastRxBytes = TrafficStats.getUidRxBytes(uid).coerceAtLeast(0)
         lastTxBytes = TrafficStats.getUidTxBytes(uid).coerceAtLeast(0)
+        sessionRxStart = lastRxBytes
+        sessionTxStart = lastTxBytes
         lastSampleAt = SystemClock.elapsedRealtime()
         handler.removeCallbacks(speedUpdater)
         handler.post(speedUpdater)
@@ -72,6 +86,7 @@ class VpnNotificationManager(private val service: Service) {
     // stops so a stale speed reading isn't left on screen.
     fun stopSpeedUpdates() {
         handler.removeCallbacks(speedUpdater)
+        EventBus.dispatch(AppEvent.TrafficSnapshot(0, 0, 0, 0))
     }
 
     private fun updateContent(text: String) {
