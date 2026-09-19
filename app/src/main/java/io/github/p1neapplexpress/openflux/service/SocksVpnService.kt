@@ -19,6 +19,7 @@ class SocksVpnService : android.net.VpnService() {
 
     companion object {
         private const val TAG = "SocksVpnService"
+        const val ACTION_STOP = "io.github.p1neapplexpress.openflux.action.STOP_VPN"
     }
 
     private lateinit var vpn: VpnServiceController
@@ -134,6 +135,11 @@ class SocksVpnService : android.net.VpnService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent ?: return START_STICKY
+        if (intent.action == ACTION_STOP) {
+            Logx.i(TAG, "stop requested from notification")
+            stopEverything()
+            return START_NOT_STICKY
+        }
         lastIntent = intent
         notifications.startForeground()
 

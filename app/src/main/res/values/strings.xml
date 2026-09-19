@@ -24,6 +24,7 @@
     <string name="encryption_key_too_short">Expected a base64-encoded 32-byte public key</string>
     <string name="show_encryption_key">Show public key</string>
     <string name="hide_encryption_key">Hide public key</string>
+    <string name="notification_stop">Turn off</string>
     <string name="cupsonline_encryption_warning">Use the same exit public key for every transport.</string>
     <string name="legacy_codec">Legacy codec (LZ4)</string>
     <string name="legacy_codec_off">Off: batched + zstd, the OpenFlux default</string>

@@ -86,14 +86,24 @@ class VpnNotificationManager(private val service: Service) {
             Intent(service, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+        val stopIntent = PendingIntent.getService(
+            service,
+            1,
+            Intent(service, SocksVpnService::class.java).setAction(SocksVpnService.ACTION_STOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
 
         return NotificationCompat.Builder(service, CHANNEL_ID)
             .setContentTitle(service.getString(R.string.notify_title))
             .setContentText(text)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setContentIntent(contentIntent)
+            .addAction(R.drawable.ic_power, service.getString(R.string.notification_stop), stopIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
     }
 
