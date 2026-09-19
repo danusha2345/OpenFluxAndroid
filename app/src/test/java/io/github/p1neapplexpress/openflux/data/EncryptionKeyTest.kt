@@ -8,19 +8,13 @@ import org.junit.Test
 class EncryptionKeyTest {
 
     @Test
-    fun `needs 16 bytes after trimming like the Go side`() {
-        assertTrue(EncryptionKey.isValid("1234567890123456"))
-        assertTrue(EncryptionKey.isValid(" 1234567890123456\n"))
-        assertFalse(EncryptionKey.isValid("123456789012345"))
-        assertFalse(EncryptionKey.isValid("  123456789012345  "))
+    fun `accepts exactly one base64 encoded 32 byte public key`() {
+        val key = "mEy4hq08BFW0mpjlznoF+kpkE+MgHoIg+GCYjYkPOSQ="
+        assertTrue(EncryptionKey.isValid(key))
+        assertTrue(EncryptionKey.isValid(" $key\n"))
+        assertFalse(EncryptionKey.isValid("MTIzNDU2Nzg5MDEyMzQ1Ng=="))
+        assertFalse(EncryptionKey.isValid("not-base64"))
         assertFalse(EncryptionKey.isValid(""))
-    }
-
-    @Test
-    fun `counts utf8 bytes not characters`() {
-        // 8 Cyrillic letters are 16 bytes, which OpenFlux accepts.
-        assertTrue(EncryptionKey.isValid("ключключ"))
-        assertFalse(EncryptionKey.isValid("ключклю"))
     }
 
     @Test

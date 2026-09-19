@@ -132,7 +132,7 @@ class AddTunFragment : BaseFragment() {
             }
 
             val rawKey = key.text.toString()
-            if (rawKey.isNotBlank() && !EncryptionKey.isValid(rawKey)) {
+            if (!EncryptionKey.isValid(rawKey)) {
                 keyContainer.error = getString(R.string.encryption_key_too_short)
                 return@setOnClickListener
             }
@@ -142,7 +142,7 @@ class AddTunFragment : BaseFragment() {
                 name = tunnelName,
                 transportType = transport.name,
                 transportConnPayload = payload,
-                encryptionKey = rawKey.takeIf { it.isNotBlank() }?.let(EncryptionKey::normalize),
+                encryptionKey = EncryptionKey.normalize(rawKey),
             )
 
             val old = editing

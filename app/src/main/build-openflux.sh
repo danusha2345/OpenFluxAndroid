@@ -51,5 +51,6 @@ build armeabi-v7a arm armv7a-linux-androideabi
 build x86_64 amd64 x86_64-linux-android
 
 commit="$(git -C "$SRC" rev-parse HEAD)"
-printf 'OpenFlux %s\n%s\n' "$commit" "$(go version)" > "$SCRIPT_DIR/openflux-version.txt"
+toolchain="$(cd "$SRC" && GOTOOLCHAIN=auto go version)"
+printf 'OpenFlux %s\n%s\n' "$commit" "$toolchain" > "$SCRIPT_DIR/openflux-version.txt"
 echo "Built OpenFlux $commit"

@@ -4,12 +4,10 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import io.github.p1neapplexpress.openflux.data.EncryptionKey
 import io.github.p1neapplexpress.openflux.event.AppEvent
 import io.github.p1neapplexpress.openflux.event.EventBus
 import io.github.p1neapplexpress.openflux.util.Logx
 import io.github.p1neapplexpress.openflux.util.Loopback
-import java.io.File
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
@@ -33,7 +31,6 @@ class NativeProcessSupervisor(
         private const val READY_POLL_MS = 250L
         private const val CONNECT_PROBE_MS = 200
         private const val STOP_GRACE_MS = 1_000L
-        private const val KEY_FILE = "openflux-encryption.key"
 
         // Go's log prefix: "2026/09/17 01:02:03.456789 main.go:349: ".
         private val LOG_PREFIX = Regex("""^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}(\.\d+)? (\S+\.go:\d+: )?""")
@@ -50,6 +47,12 @@ class NativeProcessSupervisor(
     @Volatile
     private var lastOutput: String? = null
 
+    @Volatile
+    private var lastPayload: List<String>? = null
+
+    @Volatile
+    private var lastEncryptionKey: String? = null
+
     /** SOCKS5 port of the current run on 127.0.0.1. */
     @Volatile
     var socksPort: Int = 0
@@ -61,8 +64,7 @@ class NativeProcessSupervisor(
         private set
 
     val isReady: Boolean get() = ready.get()
-
-    private val keyFile: File get() = File(context.noBackupFilesDir, KEY_FILE)
+    val isRunning: Boolean get() = running.get()
 
     fun start(payload: List<String>, encryptionKey: String?) {
         if (running.getAndSet(true)) {
@@ -73,14 +75,15 @@ class NativeProcessSupervisor(
         ready.set(false)
         error = null
         lastOutput = null
+        lastPayload = payload.toList()
+        lastEncryptionKey = encryptionKey
 
         try {
             val nativeDir = context.applicationInfo.nativeLibraryDir
             StaleProcesses.kill(nativeDir)
 
             socksPort = Loopback.freeTcpPort()
-            val keyPath = encryptionKey?.let(::writeKey)
-            val args = NativeArgs.build(payload, "127.0.0.1:$socksPort", keyPath)
+            val args = NativeArgs.build(payload, "127.0.0.1:$socksPort", encryptionKey)
             Logx.i(TAG, "exec: $NATIVE_LIB ${NativeArgs.redact(args).joinToString(" ")}")
 
             val p = ProcessBuilder(listOf("$nativeDir/$NATIVE_LIB") + args)
@@ -103,7 +106,15 @@ class NativeProcessSupervisor(
         running.set(false)
         process?.let(::destroy)
         process = null
-        deleteKey()
+    }
+
+    /** Restart the native client after the Android default network changes. */
+    fun forceRestart() {
+        val payload = lastPayload ?: return
+        val key = lastEncryptionKey
+        Logx.i(TAG, "forcing OpenFlux restart after network change")
+        stop()
+        handler.postDelayed({ start(payload, key) }, READY_POLL_MS)
     }
 
     private fun watch(p: Process, output: Thread) {
@@ -111,8 +122,6 @@ class NativeProcessSupervisor(
         while (!shuttingDown.get() && p.isAlive) {
             if (Loopback.canConnect(socksPort, CONNECT_PROBE_MS)) {
                 ready.set(true)
-                // OpenFlux reads the key before it starts listening.
-                deleteKey()
                 Logx.i(TAG, "OpenFlux is up, SOCKS5 on 127.0.0.1:$socksPort")
                 EventBus.dispatch(AppEvent.TransportConnected)
                 break
@@ -151,7 +160,6 @@ class NativeProcessSupervisor(
         error = message
         ready.set(false)
         running.set(false)
-        deleteKey()
         if (!shuttingDown.get()) handler.post { onUnexpectedExit(message) }
     }
 
@@ -161,15 +169,4 @@ class NativeProcessSupervisor(
         handler.postDelayed({ if (p.isAlive) p.destroyForcibly() }, STOP_GRACE_MS)
     }
 
-    private fun writeKey(key: String): String {
-        val file = keyFile
-        file.writeText(EncryptionKey.normalize(key))
-        file.setReadable(false, false)
-        file.setReadable(true, true)
-        return file.absolutePath
-    }
-
-    private fun deleteKey() {
-        runCatching { keyFile.delete() }
-    }
 }

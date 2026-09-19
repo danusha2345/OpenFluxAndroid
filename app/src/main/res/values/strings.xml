@@ -19,10 +19,10 @@
     <string name="cupsonline_rooms">Room list from the exit node</string>
     <string name="cupsonline_rooms_helper">The base64 string the exit node prints on start</string>
     <string name="url_must_match">Must match the exit node\'s --url exactly</string>
-    <string name="encryption_key">Encryption key (AES-256-GCM)</string>
-    <string name="encryption_key_helper">Optional. At least 16 characters, same as the exit node\'s --encryption-key-file</string>
-    <string name="encryption_key_too_short">At least 16 characters</string>
-    <string name="cupsonline_encryption_warning">Encryption with cups.online does not work in current OpenFlux: the exit node derives the key from a different --url.</string>
+    <string name="encryption_key">Exit public key (Noise)</string>
+    <string name="encryption_key_helper">Required. Paste the base64 public key printed by the exit node</string>
+    <string name="encryption_key_too_short">Expected a base64-encoded 32-byte public key</string>
+    <string name="cupsonline_encryption_warning">Use the same exit public key for every transport.</string>
     <string name="legacy_codec">Legacy codec (LZ4)</string>
     <string name="legacy_codec_off">Off: batched + zstd, the OpenFlux default</string>
     <string name="legacy_codec_on">On: only for exit nodes started with --codec=legacy</string>

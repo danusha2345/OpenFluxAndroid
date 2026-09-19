@@ -1,14 +1,15 @@
 package io.github.p1neapplexpress.openflux.data
 
-/** Shared secret passed to OpenFlux via `--encryption-key-file`. */
+import java.util.Base64
+
+/** Exit node X25519 public key passed to OpenFlux via `--peer-key`. */
 object EncryptionKey {
 
-    /** OpenFlux rejects shorter secrets (transport/encrypted.go). */
-    const val MIN_BYTES = 16
+    private const val PUBLIC_KEY_BYTES = 32
 
-    /** OpenFlux reads the key file through strings.TrimSpace. */
     fun normalize(raw: String): String = raw.trim()
 
-    fun isValid(raw: String): Boolean =
-        normalize(raw).toByteArray(Charsets.UTF_8).size >= MIN_BYTES
+    fun isValid(raw: String): Boolean = runCatching {
+        Base64.getDecoder().decode(normalize(raw)).size == PUBLIC_KEY_BYTES
+    }.getOrDefault(false)
 }

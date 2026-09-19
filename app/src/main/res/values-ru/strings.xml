@@ -19,10 +19,10 @@
     <string name="cupsonline_rooms">Список комнат от exit-ноды</string>
     <string name="cupsonline_rooms_helper">Base64-строка, которую exit-нода печатает при запуске</string>
     <string name="url_must_match">Должен совпадать с --url exit-ноды символ в символ</string>
-    <string name="encryption_key">Ключ шифрования (AES-256-GCM)</string>
-    <string name="encryption_key_helper">Необязательно. Не короче 16 символов, тот же, что в --encryption-key-file exit-ноды</string>
-    <string name="encryption_key_too_short">Минимум 16 символов</string>
-    <string name="cupsonline_encryption_warning">Шифрование с cups.online в текущем OpenFlux не работает: exit-нода выводит ключ из другого --url.</string>
+    <string name="encryption_key">Публичный ключ exit-ноды (Noise)</string>
+    <string name="encryption_key_helper">Обязательно. Вставьте base64-ключ, который печатает exit-нода</string>
+    <string name="encryption_key_too_short">Нужен base64-публичный ключ длиной 32 байта</string>
+    <string name="cupsonline_encryption_warning">Используйте один публичный ключ exit-ноды для всех транспортов.</string>
     <string name="legacy_codec">Старый кодек (LZ4)</string>
     <string name="legacy_codec_off">Выкл: batched + zstd, как в OpenFlux по умолчанию</string>
     <string name="legacy_codec_on">Вкл: только для exit-нод с --codec=legacy</string>

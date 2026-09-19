@@ -4,17 +4,20 @@ package io.github.p1neapplexpress.openflux.service
 object NativeArgs {
 
     // Flags the app always sets itself; copies inside a stored payload are dropped.
-    private val OWNED_WITH_VALUE = setOf("role", "r", "inbound", "i", "socks5", "s", "encryption-key-file")
+    private val OWNED_WITH_VALUE = setOf(
+        "role", "r", "inbound", "i", "socks5", "s",
+        "encryption-key-file", "peer-key",
+    )
     private val OWNED_BOOLEAN = setOf("client", "exit-node", "tun", "socks5-mode")
 
     private val SECRET_VALUES = setOf("maxToken")
 
-    fun build(payload: List<String>, socksAddress: String, keyFile: String?): List<String> = buildList {
+    fun build(payload: List<String>, socksAddress: String, peerKey: String?): List<String> = buildList {
         add("--role"); add("client")
         add("--inbound"); add("socks5")
         add("--socks5"); add(socksAddress)
-        if (keyFile != null) {
-            add("--encryption-key-file"); add(keyFile)
+        if (peerKey != null) {
+            add("--peer-key"); add(peerKey)
         }
 
         var i = 0
