@@ -12,8 +12,8 @@ android {
         applicationId = "io.github.p1neapplexpress.openflux"
         minSdk = 26
         targetSdk = 34
-        versionCode = 10111
-        versionName = "1.1.11"
+        versionCode = 10112
+        versionName = "1.1.12"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
@@ -26,8 +26,22 @@ android {
         aidl = true
     }
 
+    val releaseKeystore = providers.environmentVariable("OPENFLUX_RELEASE_KEYSTORE").orNull
+    val releasePassword = providers.environmentVariable("OPENFLUX_RELEASE_PASSWORD").orNull
+    if (releaseKeystore != null && releasePassword != null) {
+        signingConfigs {
+            create("openfluxRelease") {
+                storeFile = file(releaseKeystore)
+                storePassword = releasePassword
+                keyAlias = "androiddebugkey"
+                keyPassword = releasePassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("openfluxRelease")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
