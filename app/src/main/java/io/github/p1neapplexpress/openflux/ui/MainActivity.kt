@@ -16,6 +16,8 @@ import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import io.github.p1neapplexpress.openflux.R
 import io.github.p1neapplexpress.openflux.event.EventBus
+import io.github.p1neapplexpress.openflux.event.AppEvent
+import io.github.p1neapplexpress.openflux.update.AppUpdater
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -46,14 +48,22 @@ class MainActivity : AppCompatActivity() {
             .replace(R.id.main, MainFragment(), "")
             .commit()
 
+        AppUpdater.checkOnLaunch(this)
+
 
         lifecycleScope.launch {
             EventBus.events.collect { ev ->
+                if (ev is AppEvent.TransportConnected) AppUpdater.checkOnLaunch(this@MainActivity)
                 supportFragmentManager.fragments.forEach { f ->
                     if (f is BaseFragment) f.onNewEvent(ev)
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        AppUpdater.resumeInstall(this)
     }
 
 }
