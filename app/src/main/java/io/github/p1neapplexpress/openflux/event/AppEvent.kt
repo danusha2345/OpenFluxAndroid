@@ -5,6 +5,7 @@ sealed interface AppEvent {
     data class ToggleTunnel(val id: Long, val enabled: Boolean) : AppEvent
     data object TransportConnected : AppEvent
     data object TransportDisconnected : AppEvent
+    data object CaptchaRequired : AppEvent
 
     data class TrafficSnapshot(
         val txBytes: Long,

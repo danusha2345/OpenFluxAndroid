@@ -85,4 +85,15 @@
     <string name="notify_msg_running">Туннель активен</string>
     <string name="notify_msg_error">Ошибка</string>
     <string name="notify_channel_desc">Статус VPN-сервиса</string>
+    <string name="captcha_title">Яндекс запрашивает проверку</string>
+    <string name="captcha_message">Транспорт на этом телефоне требует проверки в браузере. Cookie останутся в приложении. Проверка на VPS, если она есть, проходится отдельно.</string>
+    <string name="captcha_open">Открыть проверку</string>
+    <string name="captcha_later">Позже</string>
+    <string name="captcha_web_description">Пройдите проверку Яндекса и сохраните cookie, чтобы транспорт на телефоне повторил подключение.</string>
+    <string name="captcha_save">Сохранить cookie</string>
+    <string name="captcha_close">Закрыть</string>
+    <string name="captcha_no_cookies">Cookie Яндекса пока нет. Пройдите проверку и повторите.</string>
+    <string name="captcha_not_complete">Сначала завершите проверку Яндекса.</string>
+    <string name="captcha_saved">Cookie сохранены. Транспорт повторит подключение.</string>
+    <string name="captcha_invalid">Подходящая ссылка проверки Яндекса недоступна.</string>
 </resources>
