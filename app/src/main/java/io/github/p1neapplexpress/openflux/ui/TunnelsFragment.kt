@@ -30,6 +30,7 @@ import io.github.g00fy2.quickie.QRResult
 import io.github.g00fy2.quickie.ScanQRCode
 import io.github.p1neapplexpress.openflux.R
 import io.github.p1neapplexpress.openflux.data.Tunnel
+import io.github.p1neapplexpress.openflux.data.ShareLink
 import io.github.p1neapplexpress.openflux.data.TunnelState
 import io.github.p1neapplexpress.openflux.event.AppEvent
 import io.github.p1neapplexpress.openflux.event.EventBus
@@ -39,6 +40,7 @@ import io.github.p1neapplexpress.openflux.util.toUptimeHms
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.util.Locale
+import kotlin.random.Random
 
 class TunnelsFragment : BaseFragment() {
 
@@ -84,11 +86,19 @@ class TunnelsFragment : BaseFragment() {
     private val qrScanner = registerForActivityResult(ScanQRCode()) { result ->
         val raw = (result as? QRResult.QRSuccess)?.content?.rawValue
             ?: return@registerForActivityResult
-        runCatching { qrJson.decodeFromString<Tunnel>(raw) }
-            .onSuccess { vm.addTunnel(it); requestVpnAndStart(it) }
-            .onFailure {
-                Toast.makeText(requireContext(), R.string.qr_scan_failed, Toast.LENGTH_LONG).show()
-            }
+        val shared = ShareLink.toTunnel(raw, Random.nextLong())
+        if (shared != null) {
+            vm.addTunnel(shared)
+            Toast.makeText(requireContext(), "Профиль добавлен. Проверьте его перед подключением.", Toast.LENGTH_LONG).show()
+            return@registerForActivityResult
+        }
+        val tunnel = runCatching { qrJson.decodeFromString<Tunnel>(raw) }.getOrNull()
+        if (tunnel == null) {
+            Toast.makeText(requireContext(), R.string.qr_scan_failed, Toast.LENGTH_LONG).show()
+        } else {
+            vm.addTunnel(tunnel)
+            requestVpnAndStart(tunnel)
+        }
     }
 
     // QR codes may come from newer app versions with fields this one doesn't know.

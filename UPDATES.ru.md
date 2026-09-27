@@ -10,7 +10,7 @@
 
 Для каждого релиза нужны:
 
-1. Тег `v<versionName>`, например `v1.1.12`, и соответствующий `versionCode`
+1. Тег `v<versionName>`, например `v1.1.13`, и соответствующий `versionCode`
    по формуле `major*10000 + minor*100 + patch`.
 2. APK с именем `OpenFluxAndroid.apk`, опубликованный в GitHub Release. GitHub
    должен отдавать для asset поле `digest: sha256:...`.
@@ -20,6 +20,11 @@
    сертификата через `apksigner verify --print-certs` с предыдущим APK.
 4. Сборка всех трёх ABI `libp1npplydtransport.so` из того же коммита
    OpenFlux, который указан в `app/src/main/openflux-version.txt`.
+
+Начиная с 1.1.13 встроенный сканер также принимает QR-ссылки
+`openflux://noise-v1/`, которые печатает `openflux --share`. Перед запуском
+проверьте URL и публичный ключ в профиле. Ссылки AES/session апстрима
+несовместимы.
 
 Локальная release-сборка читает `OPENFLUX_RELEASE_KEYSTORE` и
 `OPENFLUX_RELEASE_PASSWORD` из окружения. Без них Gradle создаёт неподписанный
