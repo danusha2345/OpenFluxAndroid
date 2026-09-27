@@ -56,5 +56,18 @@ class NativeArgsTest {
             NativeArgs.redact(listOf("--maxToken", "secret", "--maxUid", "1")),
         )
         assertEquals(listOf("--maxToken=***"), NativeArgs.redact(listOf("--maxToken=secret")))
+        assertEquals(listOf("--url", "***"), NativeArgs.redact(listOf("--url", "https://disk.yandex.ru/i/secret")))
+    }
+
+    @Test
+    fun `Yandex handoff paths are owned by the app`() {
+        val payload = listOf("--transport", "yandex", "--url", "https://disk.yandex.ru/i/x",
+            "--yandex-cookies-file", "/sdcard/untrusted", "--yandex-challenge-file=/sdcard/other")
+        val args = NativeArgs.build(payload, socks, "public-key", "/private/challenge", "/private/cookies")
+        assertEquals(1, args.count { it == "--yandex-challenge-file" })
+        assertEquals(1, args.count { it == "--yandex-cookies-file" })
+        assertEquals("/private/challenge", args[args.indexOf("--yandex-challenge-file") + 1])
+        assertEquals("/private/cookies", args[args.indexOf("--yandex-cookies-file") + 1])
+        assertEquals(false, args.any { it.contains("/sdcard") })
     }
 }

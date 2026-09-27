@@ -6,6 +6,7 @@ import android.os.Looper
 import android.os.SystemClock
 import io.github.p1neapplexpress.openflux.event.AppEvent
 import io.github.p1neapplexpress.openflux.event.EventBus
+import io.github.p1neapplexpress.openflux.data.TunnelPayload
 import io.github.p1neapplexpress.openflux.util.Logx
 import io.github.p1neapplexpress.openflux.util.Loopback
 import java.io.IOException
@@ -40,6 +41,7 @@ class NativeProcessSupervisor(
     private val running = AtomicBoolean(false)
     private val ready = AtomicBoolean(false)
     private val transportReady = AtomicBoolean(false)
+    private val waitingForCaptcha = AtomicBoolean(false)
     private val shuttingDown = AtomicBoolean(false)
 
     @Volatile
@@ -78,6 +80,7 @@ class NativeProcessSupervisor(
         shuttingDown.set(false)
         ready.set(false)
         transportReady.set(false)
+        waitingForCaptcha.set(false)
         error = null
         lastOutput = null
         lastPayload = payload.toList()
@@ -90,7 +93,13 @@ class NativeProcessSupervisor(
             StaleProcesses.kill(nativeDir)
 
             socksPort = Loopback.freeTcpPort()
-            val args = NativeArgs.build(payload, "127.0.0.1:$socksPort", encryptionKey)
+            val transport = TunnelPayload.value(payload, "transport")
+            val yandex = transport == "yandex" || transport == "vyandex"
+            val challenge = if (yandex) YandexCaptchaFiles.challengeFile(context) else null
+            val cookies = if (yandex) YandexCaptchaFiles.cookiesFile(context) else null
+            challenge?.delete() // A new run must not show a stale token from the previous run.
+            val args = NativeArgs.build(payload, "127.0.0.1:$socksPort", encryptionKey,
+                challenge?.absolutePath, cookies?.absolutePath)
             Logx.i(TAG, "exec: $NATIVE_LIB ${NativeArgs.redact(args).joinToString(" ")}")
 
             val p = ProcessBuilder(listOf("$nativeDir/$NATIVE_LIB") + args)
@@ -112,6 +121,7 @@ class NativeProcessSupervisor(
         ready.set(false)
         running.set(false)
         transportReady.set(false)
+        waitingForCaptcha.set(false)
         process?.let(::destroy)
         process = null
         EventBus.dispatch(AppEvent.TrafficSnapshot(0, 0, 0, 0))
@@ -134,7 +144,7 @@ class NativeProcessSupervisor(
                 Logx.i(TAG, "OpenFlux is up, SOCKS5 on 127.0.0.1:$socksPort")
                 break
             }
-            if (SystemClock.elapsedRealtime() > deadline) {
+            if (SystemClock.elapsedRealtime() > deadline && !waitingForCaptcha.get()) {
                 fail("OpenFlux did not start within ${READY_TIMEOUT_MS / 1000} s")
                 destroy(p)
                 return
@@ -161,6 +171,11 @@ class NativeProcessSupervisor(
                     lastOutput = line
                     android.util.Log.d("NativeStdout", line)
                     EventBus.dispatch(AppEvent.LogMessage(line))
+                    if (line.contains("browser verification required; challenge file:") &&
+                        YandexCaptchaFiles.pendingURL(context) != null) {
+                        waitingForCaptcha.set(true)
+                        EventBus.dispatch(AppEvent.CaptchaRequired)
+                    }
                 }
             }
         } catch (_: IOException) {

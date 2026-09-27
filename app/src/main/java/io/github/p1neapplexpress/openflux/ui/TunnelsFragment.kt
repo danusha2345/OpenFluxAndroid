@@ -218,6 +218,11 @@ class TunnelsFragment : BaseFragment() {
                 true
             }
 
+            row.findViewById<View>(R.id.item_edit).setOnClickListener {
+                popup?.dismiss()
+                editTunnel(tunnel)
+            }
+
             items.addView(row)
         }
 
@@ -283,10 +288,7 @@ class TunnelsFragment : BaseFragment() {
         menuView.findViewById<View>(R.id.menu_edit).setOnClickListener {
             menu.dismiss()
             popup?.dismiss()
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.main, AddTunFragment.edit(tunnel))
-                .addToBackStack("edit")
-                .commit()
+            editTunnel(tunnel)
         }
 
         menuView.findViewById<View>(R.id.menu_delete).setOnClickListener {
@@ -306,6 +308,13 @@ class TunnelsFragment : BaseFragment() {
             .setDuration(160)
             .setInterpolator(OvershootInterpolator(1.1f))
             .start()
+    }
+
+    private fun editTunnel(tunnel: Tunnel) {
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.main, AddTunFragment.edit(tunnel))
+            .addToBackStack("edit")
+            .commit()
     }
 
     private fun confirmDelete(tunnel: Tunnel) {

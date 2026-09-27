@@ -17,6 +17,7 @@ import io.github.p1neapplexpress.openflux.data.TunnelViewType
 import io.github.p1neapplexpress.openflux.event.AppEvent
 import io.github.p1neapplexpress.openflux.event.EventBus
 import io.github.p1neapplexpress.openflux.service.SocksVpnService
+import io.github.p1neapplexpress.openflux.service.YandexCaptchaFiles
 import io.github.p1neapplexpress.openflux.util.Logx
 import io.github.p1neapplexpress.openflux.vpn.VPNConfig
 import io.github.p1neapplexpress.openflux.vpn.VpnIntentFactory
@@ -155,7 +156,11 @@ class TunnelsViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
 
-            awaitService(TRANSPORT_TIMEOUT_MS, "Transport did not start") { it.isFServiceRunning() }
+            awaitService(TRANSPORT_TIMEOUT_MS, "Transport did not start",
+                { it.isFServiceRunning() }) {
+                tunnel.transportType in setOf("yandex", "vyandex") &&
+                    YandexCaptchaFiles.pendingURL(ctx) != null
+            }
                 ?.let { fail(it); return@launch }
 
             Logx.i(TAG, "starting tun2socks")
@@ -167,7 +172,7 @@ class TunnelsViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
 
-            awaitService(TUN2SOCKS_TIMEOUT_MS, "tun2socks did not start") { it.isVpnRunning() }
+            awaitService(TUN2SOCKS_TIMEOUT_MS, "tun2socks did not start", { it.isVpnRunning() })
                 ?.let { fail(it); return@launch }
 
             _active.value = TunnelState.Running(tunnel)
@@ -181,9 +186,13 @@ class TunnelsViewModel(app: Application) : AndroidViewModel(app) {
         timeoutMs: Long,
         timeoutMessage: String,
         ready: (IUnifiedService) -> Boolean,
+        waitingForCaptcha: () -> Boolean = { false },
     ): String? {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
+        var deadline = System.currentTimeMillis() + timeoutMs
+        while (true) {
+            val now = System.currentTimeMillis()
+            if (waitingForCaptcha()) deadline = now + timeoutMs
+            else if (now >= deadline) break
             val s = service ?: return "Service not connected"
             try {
                 s.nativeError()?.let { return it }

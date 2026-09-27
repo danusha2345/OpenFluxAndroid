@@ -29,6 +29,18 @@
         android:ellipsize="end" />
 
     <ImageView
+        android:id="@+id/item_edit"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="8dp"
+        android:padding="4dp"
+        android:src="@android:drawable/ic_menu_edit"
+        android:contentDescription="@string/action_edit"
+        android:clickable="true"
+        android:focusable="true"
+        app:tint="@color/text_secondary" />
+
+    <ImageView
         android:id="@+id/item_check"
         android:layout_width="18dp"
         android:layout_height="18dp"

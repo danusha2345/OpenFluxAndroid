@@ -7,18 +7,24 @@ object NativeArgs {
     private val OWNED_WITH_VALUE = setOf(
         "role", "r", "inbound", "i", "socks5", "s",
         "encryption-key-file", "peer-key", "traffic-stats",
+        "yandex-challenge-file", "yandex-cookies-file",
     )
     private val OWNED_BOOLEAN = setOf("client", "exit-node", "tun", "socks5-mode")
 
-    private val SECRET_VALUES = setOf("maxToken")
+    private val SECRET_VALUES = setOf("maxToken", "url")
 
-    fun build(payload: List<String>, socksAddress: String, peerKey: String?): List<String> = buildList {
+    fun build(payload: List<String>, socksAddress: String, peerKey: String?,
+              challengeFile: String? = null, cookiesFile: String? = null): List<String> = buildList {
         add("--role"); add("client")
         add("--inbound"); add("socks5")
         add("--socks5"); add(socksAddress)
         add("--traffic-stats"); add("1s")
         if (peerKey != null) {
             add("--peer-key"); add(peerKey)
+        }
+        if (challengeFile != null && cookiesFile != null) {
+            add("--yandex-challenge-file"); add(challengeFile)
+            add("--yandex-cookies-file"); add(cookiesFile)
         }
 
         var i = 0

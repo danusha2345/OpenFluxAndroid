@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">OpenFlux</string>
-    <string name="version" translatable="false">1.1.0</string>
+    <string name="version" translatable="false">1.1.14</string>
 
     <string name="channel_name">VPN Service</string>
     <string name="notify_title">OpenFlux running</string>
@@ -82,4 +82,15 @@
     <string name="notify_msg_running">Tunnel is active</string>
     <string name="notify_msg_error">Error</string>
     <string name="notify_channel_desc">VPN service status</string>
+    <string name="captcha_title">Yandex verification required</string>
+    <string name="captcha_message">The Yandex transport on this phone needs browser verification. Cookies will stay in this app. A separate challenge on the VPS needs separate verification.</string>
+    <string name="captcha_open">Open verification</string>
+    <string name="captcha_later">Later</string>
+    <string name="captcha_web_description">Complete the Yandex check, then save cookies so this phone can retry its transport.</string>
+    <string name="captcha_save">Save cookies</string>
+    <string name="captcha_close">Close</string>
+    <string name="captcha_no_cookies">No Yandex cookies yet. Complete the check and try again.</string>
+    <string name="captcha_not_complete">Finish the Yandex check before saving cookies.</string>
+    <string name="captcha_saved">Cookies saved. The transport will retry.</string>
+    <string name="captcha_invalid">No valid Yandex challenge link is available.</string>
 </resources>

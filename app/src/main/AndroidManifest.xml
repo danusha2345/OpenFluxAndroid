@@ -45,6 +45,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.YandexCaptchaActivity"
+            android:exported="false" />
+
         <service
             android:name=".service.SocksVpnService"
             android:exported="false"
