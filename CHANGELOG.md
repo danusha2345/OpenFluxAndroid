@@ -1,0 +1,334 @@
+# Changelog
+
+All notable changes to OpenFluxAndroid. Format loosely follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [2.6.3] - 2026-10-14
+
+### Changed
+
+- **Mail.ru is much faster** (core 0.7.3): the tunnel packs far more into each editor-chat message before
+  the server's ~12-message cut, lifting end-to-end throughput from tens of KB/s to roughly 800 KB/s per
+  burst. "Своя нода" installs node-v1.4.2.
+
+## [2.6.2] - 2026-10-13
+
+### Fixed
+
+- **An exit node in cups.online or Avito mode could not be started on the phone**: it asked for a document link.
+  Started with no room code, it now creates its rooms and the link it shares carries them (core 0.7.2).
+- **A dropped Avito connection could crash the app** (core 0.7.2).
+
+## [2.6.1] - 2026-10-13
+
+### Fixed
+
+- **2.6.0 was built from an old branch** and lost everything from 2.3.3 to 2.5.1, including the core's Mail.ru
+  fix and the bundled Mail.ru 1.2.0 carrier ("access deny" came back). 2.6.1 is 2.5.1 plus 2.6.0 on core
+  0.7.1, which has both.
+- **cups.online is several times faster**: through the tunnel, 4 rooms went from ~90 KB/s to ~420 KB/s
+  (the carrier no longer sends faster than the server relays, so it stops losing most of what it sends).
+  cups and avito run each room as a lane of one reliable link; a room list made by a new exit node only
+  works with this version or newer.
+- **"Своя нода" installs the 0.7.1 exit-node core** (node-v1.4.0) instead of 0.5.1.
+
+## [2.5.1] - 2026-10-13
+
+Hotfix: core 0.6.1. The Mail.ru document carrier works again — the editor server began rejecting the old
+cursor-field data path with "access deny", so the tunnel now rides the document's chat channel, and the
+bundled scripted Mail.ru carrier (updated to 1.2.0) negotiates permessage-deflate on the WebSocket upgrade so
+it can connect at all.
+
+## [2.5.0] - 2026-10-12
+
+### Changed
+
+- **Core updated to OpenFlux 0.6.0.** A node started from the app can now keep its scripted (`.flux`)
+  transports current and self-heal on its own (`--script-auto-update`): it pulls a published fix, rolls back
+  a bad one, and hot-swaps the new package into the live session with no restart. Also carries a fix to the
+  `node-install.sh` pin so node provisioning verifies the script this build actually ships.
+
+## [2.4.1] - 2026-10-11
+
+The core 0.5.1.
+
+### Fixed
+
+- **Telemost no longer joins the room as «OpenFlux».** Lanes join as «Гость» with a browser-like
+  RTCP CNAME, so the participant name no longer gives the tunnel away (core #169).
+- **Mail.ru Docs:** `Accept-Language` now rides on the WebSocket upgrade and the API calls, for
+  clients that still saw 409 after the earlier User-Agent fix (core #164).
+- **Telemost stability:** an exit no longer crashes when a peer leaves mid-transfer, and downloads
+  through an L4 exit are no longer capped near 1.5 MB/s (core 0.5.1).
+
+## [2.4.0] - 2026-10-11
+
+The core 0.5.0: the Telemost transport.
+
+### Added
+
+- **Yandex Telemost as a transport (experimental).** A profile of the type «Яндекс Телемост» needs only the
+  link of a Telemost conference that the exit node joins too; the tunnel rides the conference as video,
+  striped over five participants on each end (core 0.5.0, `OpenFlux` bumped to
+  [`7336e1b`](https://github.com/p1neappleXpress/OpenFlux/commit/7336e1b)). The exit is the 0.5.0 core
+  (`node-v1.3.0`) started with `-role exit -t telemost -u <conference link>`; its `--share` link imports as
+  a profile and runs through the VPN. Measured on a phone through a server exit: about 0.8-1.5 MB/s on
+  average; the first seconds of every transfer are slower while the conference ramps up. One conference
+  serves one client.
+
+### Changed
+
+- **The tunnel's TCP rides out a late carrier.** Carriers deliver in order but now and then late; the
+  tunnel's TCP now waits that out (a 3-second retransmission floor, loss detection by duplicate ACKs)
+  instead of shrinking its window to a crawl (core 0.5.0).
+
+## [2.3.3] - 2026-10-11
+
+Hotfix: the core 0.4.3 — the Yandex and Mail.ru carriers.
+
+### Fixed
+
+- **Yandex: the carrier relays tunnel packets again.** The outgoing cursor message declared a fixed
+  length of `18` before its payload, but Yandex Disk does not relay a cursor whose declared length does
+  not match the packet, so every tunnel packet was dropped and the Session handshake timed out. The real
+  packet length is sent now (core 0.4.3, `OpenFlux` bumped to
+  [`d7105bd`](https://github.com/p1neappleXpress/OpenFlux/commit/d7105bd)). Verified end to end from this
+  app: a real HTTPS request over the Yandex carrier reaches the exit. Reported by @Gamazzz
+  ([OpenFlux#165](https://github.com/p1neappleXpress/OpenFlux/issues/165)) — thank you.
+- **Mail.ru Docs: the carrier comes up on public links again.** Mail.ru's nginx answered `409 Conflict`
+  to the WebSocket upgrade, so the transport never connected; it now offers `permessage-deflate` and uses
+  a current Firefox `User-Agent`. Reported by @pirsasha
+  ([OpenFlux#163](https://github.com/p1neappleXpress/OpenFlux/issues/163)) and @Shiller70
+  ([OpenFlux#164](https://github.com/p1neappleXpress/OpenFlux/issues/164)) — thank you. Exit nodes on a
+  VDS need the same core: «Своя нода» installs `node-v1.2.3`.
+
+## [2.3.2] - 2026-10-07
+
+Hotfix: the core 0.4.2.
+
+### Fixed
+
+- **Mail.ru Docs: a link that only lets the document be read no longer drops the connection every few
+  seconds.** The transport sent the editor's `saveChanges` now and then, and for a link without edit rights
+  (what most public links are) the server closed the connection on every one, so the channel was up for
+  moments between reconnects. It is not sent there any more (core 0.4.2, `OpenFlux` bumped to
+  [`74cac6d`](https://github.com/p1neappleXpress/OpenFlux/commit/74cac6d)). The Engine.IO / Socket.IO
+  handshake is also completed before the auth is sent (thanks to Novarg93,
+  [OpenFlux#147](https://github.com/p1neappleXpress/OpenFlux/pull/147)). Exit nodes on a VDS need the same
+  core: «Своя нода» installs `node-v1.2.2`.
+
+## [2.3.1] - 2026-10-07
+
+Hotfix: the core 0.4.1.
+
+### Fixed
+
+- **Yandex Docs / Boards / Volga through a node: the check no longer repeats forever.** The check the
+  node asks for is passed in the app's browser from the node's IPv4 address (through the tunnel), but
+  the node's own requests went out over IPv6 on hosts that have an IPv6 route, so Yandex never accepted
+  the cookies the app handed over. The core now dials Yandex IPv4 first (core 0.4.1, `OpenFlux` bumped to
+  [`d0578b6`](https://github.com/p1neappleXpress/OpenFlux/commit/d0578b6)). Exit nodes on a VDS need the
+  same core: «Своя нода» installs `node-v1.2.1`.
+- **Exit node, L3: the log (`-d`) shows the tunnel's packets only**, not every packet the host receives.
+
+## [2.3.0] - 2026-10-07
+
+### Added
+
+- **«Экспериментальные функции»** (Settings): the JS-transport features below are off by default and
+  for settings saved before; nothing of them is shown, started or fetched, and the JS engine is not
+  started when the app starts, until the switch is on.
+- **JS transports** (experimental, off by default): the «Транспорты» tab, installing a signed
+  transport by link, file or catalog with a trust dialog and the author's key fingerprint, the
+  settings a transport declares (a wizard page), its own setup and login pages in a WebView, update
+  check with changelog, apply and roll back, and the transports shipped in the app (installed, or
+  replaced by a newer shipped version, the first time the switch is turned on). A profile that uses
+  a JS transport does not connect while the switch is off, and says so.
+- A second release channel: nightly test builds next to the main releases. A
+  nightly is a GitHub prerelease tagged `nightly-<date>-<commit>`, built by the
+  new `Nightly` workflow from the `nightly` branch (on a push to it, and every
+  night when it has a commit without a build), signed with the same key as a
+  main release so it installs over one; the newest 7 are kept. Settings → About
+  has a «Ночные сборки» switch: with it on, «Проверить обновления» also looks
+  at nightlies; the main channel never sees them.
+
+### Changed
+
+- Bumps `OpenFlux` to the core 0.4.0 ([`a415c09`](https://github.com/p1neappleXpress/OpenFlux/commit/a415c09d1d1006a201b5e9523d2f30d7ee2b4149)) and `shared` to
+  [`a7fca72`](https://github.com/p1neappleXpress/OpenFluxClientShared/commit/a7fca72).
+- The core's Yandex check on a profile without a key now reaches the app (a profile without a Session
+  used to log "external solver required" and never ask for the check).
+
+## [2.2.0] - 2026-10-01
+
+### Fixed
+
+- «Без сервера»: the node now stays up on any host and keeps the tunnel going
+  across its generations, and the install no longer fails when the host cuts a
+  transfer short (InfinityFree's FTP aborted the link parser part way): a file is
+  sent again, and `auto` goes on in plain FTP after it keeps failing over TLS.
+  The wizard also adds a node already on the hosting from its site and access key
+  (no FTP), takes a key of your own on an FTP install, opens the node's panel in
+  the browser, and shows which generation serves («работает · поколение N»).
+  Bumps `OpenFlux` to
+  [`bb55dc3`](https://github.com/p1neappleXpress/OpenFlux/commit/bb55dc3) and
+  `shared` to
+  [`98572e2`](https://github.com/p1neappleXpress/OpenFluxClientShared/commit/98572e2).
+- The core's Yandex Boards moves packets as `modify-objects` text objects (the
+  board no longer relays `notify-position`), and Yandex Docs and Mail.ru Docs
+  send the web client's `saveChanges` stream built from the live session.
+
+### Added
+
+- With carriers at equal top priority the badge and «Сейчас через» name all of
+  them ("Board + Volga 2"), as the core spreads traffic over the whole group.
+
+- «Без сервера»: a new profile mode where the exit is a small PHP program on an
+  ordinary web hosting (free or paid, any with PHP and FTP/FTPS) instead of your
+  own server. The wizard (Профили → «Без сервера») takes the FTP data and the
+  site's address, creates a cups.online room (or takes a Mail.ru document),
+  uploads the node, checks that the site runs it, starts it and connects
+  through it before saving the profile. Works as the system-wide VPN or as a
+  local SOCKS5 proxy; no key to keep, TCP on ports 80 and 443 only. The node
+  renews itself while it is used, and connecting a profile made this way first
+  asks its node to run when the hosting is reachable. Its `openflux://` link and
+  QR carry the mode (never the node's token).
+
+- «Своя нода»: a new channel is no longer Yandex-only. Step 2 picks any mix
+  of a Yandex document (your own link), a Mail.ru public document and
+  cups.online rooms (created automatically), with direct always on as the
+  backup; the link and the saved profile carry all of them.
+- «Автообновление ядра» on the plan step (on by default): the server's
+  `openflux-node-update.timer` checks the newest `node-v*` release every
+  6 hours, verifies it against the release's `node-install.sh` and
+  `SHA256SUMS`, restarts the channels and rolls back if one does not stay
+  up.
+
+### Changed
+
+- The node wizard no longer signs in to Yandex: the document step takes
+  the link of a document you created, and the node gets no account
+  cookies. Solving a captcha on the phone, or for a node through the
+  phone, works as before.
+- The node's `node-install.sh` is tested on Ubuntu 20.04–24.04, Debian
+  12–13, Rocky 9, Alma 8, Fedora 42, Arch and openSUSE Leap 15.6; on the
+  server `node-install.sh list` shows the channels, `remove <channel>`
+  deletes one and `uninstall` removes the node completely.
+- Bumps `OpenFlux` to [`39b3356`](https://github.com/p1neappleXpress/OpenFlux/commit/39b335655da147f87271c9ebe43e799d14977e9b)
+  and `shared` to [`383c2de`](https://github.com/p1neappleXpress/OpenFluxClientShared/commit/383c2de303dc0a568739a7020e2dec17285de558).
+
+## [2.1.0] - 2026-09-28
+
+### Changed
+
+- Share links are read and made by the core, the way every client does:
+  bumps `OpenFlux` to [`2ec01a5`](https://github.com/p1neappleXpress/OpenFlux/commit/2ec01a5) (core 0.2.0) and `shared` to
+  [`ae5e59a`](https://github.com/p1neappleXpress/OpenFluxClientShared/commit/ae5e59a).
+  - A link that picked up line breaks, spaces, non-breaking or zero-width
+    characters, padding or the standard base64 alphabet on the way imports,
+    as on iOS, instead of «Ссылка повреждена».
+  - The same profile makes the same link on Desktop, Android and iOS; the
+    core names the encryption context of a Session link, the app no longer
+    derives it.
+  - A refused link says why: not a link, cut short, letters changed case,
+    unknown transport, key too short, and so on.
+  - The node wizard installs `node-v1.1.0`, the node build of core 0.2.0.
+- The node wizard's document step takes the link of a document you
+  created; the button that signed in to Yandex and created one is gone.
+- The release notes show this changelog.
+
+### Fixed
+
+- Clients and nodes built from different trees now connect: bumps `OpenFlux`
+  to [`f8f3476`](https://github.com/p1neappleXpress/OpenFlux/commit/f8f34767a5732febd5965ac6cf95bad51b70cf99).
+  - A classic profile with a key runs the Session and falls back to the
+    classic layering for a classic or older node, on the same carrier; a
+    node set up as classic serves both kinds of client. Nodes set up for
+    the Session stay Session-only.
+  - The encryption context follows one rule everywhere, and a client whose
+    context differs from the node's finds the node's instead of timing out
+    (classic cups.online was the common case).
+  - The classic codec (batched or legacy) is no longer a hard requirement:
+    both are accepted and the client switches when the node does not answer.
+  - boards no longer drops the connection every 20 seconds; yandex and
+    mailru reconnect when their socket dies.
+  - The log explains a failed handshake: wrong key, a node in the other
+    mode, the codec or context picked, a connection taken over by another
+    client.
+
+## [2.0.1] - 2026-09-27
+
+### Fixed
+
+- An exit node deployed by the node wizard never actually connected: a
+  `.conf`-only `Role = exit` (every node-wizard deployment) left the core's
+  internal exit/client flag stuck at its pre-config value, so the exit
+  never answered the handshake and crash-looped instead. Bumps `OpenFlux`
+  to [`e8f735a`](https://github.com/p1neappleXpress/OpenFlux/commit/e8f735a98c1ba9e091956416fde5c5ef92d3cd66).
+- The startup log always printed `Transport: yandex` for session/multi-transport
+  profiles regardless of which transports were actually configured (a stale
+  flag default, not a functional bug — the correct transports ran either
+  way). Now prints the actual list, e.g. `Transport: boards, direct (session)`.
+- Cups.online profiles with no room codes couldn't be saved or connected;
+  the node generates its own rooms, so an empty value is valid for this
+  transport only.
+- An exit node always listened for Direct (TCP on `0.0.0.0:<port>`) and put
+  it into the clients' link, even when the profile had no Direct transport.
+  It now listens only when the profile has Direct, at that transport's
+  priority ([#11](https://github.com/p1neappleXpress/OpenFluxAndroid/pull/11)).
+- A phone exit on cups.online without room codes put cups.online into its
+  link with no rooms, so clients could not join; the link now carries the
+  rooms the node created ([OpenFlux#123](https://github.com/p1neappleXpress/OpenFlux/pull/123)).
+
+### Added
+
+- Settings → Ядро OpenFlux: a core log-level picker (Выкл / -d / -dd /
+  -ddd, the core's `--debug=N`) in place of the "Подробный журнал ядра"
+  switch. The embedded core used to run at -dd on every connect whatever
+  the switch said — formatting a log line for every packet — and the
+  switch only hid those lines from the log view; the level now reaches the
+  core itself ([OpenFlux#121](https://github.com/p1neappleXpress/OpenFlux/pull/121)).
+  The default is Выкл: choose -dd to see transport errors, handshakes and
+  the encryption (KDF) context.
+- Node-wizard deployment logging: every SSH/RPC call and the wizard's own
+  step narration now goes to the Logs tab, so a stuck deployment is
+  diagnosable without a debugger.
+- Home → Подключение: a "Сейчас через" row for profiles with several
+  transports, and carriers named as in the app ("Board 2", not `boards-2`)
+  there and in the "через …" badge.
+
+## [2.0.0] - 2026-09-27
+
+First release of this app. Replaces the previous single-transport native
+app (tun2socks + pdnsd JNI, preserved at the
+[`legacy-native-app`](../../tree/legacy-native-app) tag) with the Compose
+Multiplatform app originally built by [@meepo161](https://github.com/meepo161)
+in [OpenFluxClient](https://github.com/meepo161/OpenFluxClient), moved here
+with his agreement.
+
+### Added
+
+- System VPN or local SOCKS5.
+- Multi-transport sessions with automatic failover and priority-based
+  switching (including `direct`).
+- AES-256-GCM session encryption.
+- SmartCaptcha and login handling in a built-in browser, including a
+  transport check on the exit node, passed through the tunnel from its
+  own address.
+- A node-deployment wizard: install an exit node on your own VPS over SSH
+  from the app.
+- `shared/` and `OpenFlux/` as git submodules ([OpenFluxClientShared](https://github.com/p1neappleXpress/OpenFluxClientShared)
+  and the [OpenFlux](https://github.com/p1neappleXpress/OpenFlux) core), so
+  this app always builds against one pinned, single copy of each instead of
+  a vendored one.
+- `.github/workflows/release.yml`: a `v*` tag builds and signs a release
+  APK and publishes it here.
+
+### Credits
+
+- [@meepo161](https://github.com/meepo161) — this app's UI and logic.
+- [@p1neappleXpress](https://github.com/p1neappleXpress) — the OpenFlux
+  core it embeds.
+- [@damnurmum](https://github.com/damnurmum) — `openflux://` links/QR codes
+  and the cups.online transport in the core, which this app's share and
+  scan screens build on.

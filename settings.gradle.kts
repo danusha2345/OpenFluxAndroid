@@ -1,23 +1,41 @@
+rootProject.name = "openfluxandroid"
+
 pluginManagement {
     repositories {
         google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
+            mavenContent {
+                includeGroupAndSubgroups("androidx")
+                includeGroupAndSubgroups("com.android")
+                includeGroupAndSubgroups("com.google")
             }
         }
         mavenCentral()
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        google()
+        google {
+            mavenContent {
+                includeGroupAndSubgroups("androidx")
+                includeGroupAndSubgroups("com.android")
+                includeGroupAndSubgroups("com.google")
+            }
+        }
         mavenCentral()
+        // JOGL for JCEF (KCEF, the built-in browser).
+        maven("https://jogamp.org/deployment/maven") {
+            mavenContent { includeGroupAndSubgroups("org.jogamp") }
+        }
     }
 }
 
-rootProject.name = "OpenFluxAndroid"
-include(":app")
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+
+// shared/ is the OpenFluxClientShared git submodule (init with
+// `git submodule update --init --recursive`).
+include(":shared")
+include(":androidApp")
